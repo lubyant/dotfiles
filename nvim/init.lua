@@ -11,13 +11,39 @@ vim.g.mapleader = ' '
 -- To see documentation for an option, you can use `:h 'optionname'`, for example `:h 'number'`
 -- (Note the single quotes)
 
+-- Display
 vim.o.number = true -- Show line numbers in a column.
-vim.o.expandtab = true
 
 -- Show line numbers relative to where the cursor is.
 -- Affects the 'number' option above, see `:h number_relativenumber`.
 vim.o.relativenumber = true
 
+vim.o.cursorline = true -- Highlight the line where the cursor is on.
+vim.o.scrolloff = 10 -- Keep this many screen lines above/below the cursor.
+vim.o.list = true -- Show <tab> and trailing spaces.
+
+-- line number for netrw
+vim.api.nvim_create_autocmd("FileType", {
+  pattern = "netrw",
+  callback = function()
+    vim.opt_local.number = true
+  end,
+})
+
+-- Indentation
+-- Use spaces instead of tabs for indentation.
+vim.o.expandtab = true
+vim.o.shiftwidth = 4
+vim.o.tabstop = 4
+vim.o.softtabstop = 4
+vim.o.smartindent = true -- Smart auto-indentation for C-like languages.
+
+-- Search
+-- Case-insensitive searching UNLESS \C or one or more capital letters in the search term
+vim.o.ignorecase = true
+vim.o.smartcase = true
+
+-- Clipboard
 -- Sync clipboard between OS and Neovim. Schedule the setting after `UIEnter` because it can
 -- increase startup-time. Remove this option if you want your OS clipboard to remain independent.
 -- See `:h 'clipboard'`
@@ -26,22 +52,6 @@ vim.api.nvim_create_autocmd('UIEnter', {
     vim.o.clipboard = 'unnamedplus'
   end,
 })
-
--- Case-insensitive searching UNLESS \C or one or more capital letters in the search term
-vim.o.ignorecase = true
-vim.opt.expandtab = true      -- Insert spaces instead of tabs
-
-vim.opt.tabstop = 4           -- A tab character appears as 4 spaces
-
-vim.opt.softtabstop = 4       -- Number of spaces inserted/deleted when pressing Tab/Backspace
-
-vim.opt.shiftwidth = 4        -- Number of spaces used for each indentation level
-
-vim.opt.smartindent = true    -- Smart auto-indentation for C-like languages
-
-vim.o.cursorline = true -- Highlight the line where the cursor is on.
-vim.o.scrolloff = 10 -- Keep this many screen lines above/below the cursor.
-vim.o.list = true -- Show <tab> and trailing spaces.
 
 -- If performing an operation that would fail due to unsaved changes in the buffer (like `:q`),
 -- instead raise a dialog asking if you wish to save the current file(s). See `:h 'confirm'`
@@ -63,6 +73,38 @@ vim.keymap.set({ 'n' }, '<A-h>', '<C-w>h')
 vim.keymap.set({ 'n' }, '<A-j>', '<C-w>j')
 vim.keymap.set({ 'n' }, '<A-k>', '<C-w>k')
 vim.keymap.set({ 'n' }, '<A-l>', '<C-w>l')
+
+-- Completion keymaps (interact with the popup menu when visible, fall back to normal behavior)
+local function pum_visible()
+  return vim.fn.pumvisible() == 1
+end
+
+-- TAB: next item OR insert tab
+vim.keymap.set('i', '<Tab>', function()
+  if pum_visible() then
+    return '<C-n>'   -- next completion item
+  else
+    return '<Tab>'   -- normal tab
+  end
+end, { expr = true })
+
+-- Shift-TAB: previous item
+vim.keymap.set('i', '<S-Tab>', function()
+  if pum_visible() then
+    return '<C-p>'
+  else
+    return '<S-Tab>'
+  end
+end, { expr = true })
+
+-- Enter: confirm
+vim.keymap.set('i', '<CR>', function()
+  if pum_visible() then
+    return '<C-y>'   -- accept completion
+  else
+    return '<CR>'
+  end
+end, { expr = true })
 
 -- AUTOCOMMANDS (EVENT HANDLERS)
 --
@@ -104,30 +146,43 @@ vim.pack.add({
   'https://github.com/ibhagwan/fzf-lua',
   -- Autocompletion
   'https://github.com/nvim-mini/mini.completion',
+  -- Autopair
   'https://github.com/nvim-mini/mini.pairs',
+  -- Surround
+  'https://github.com/nvim-mini/mini.surround',
   -- Enhanced quickfix/loclist
   'https://github.com/stevearc/quicker.nvim',
   -- Git integration
   'https://github.com/lewis6991/gitsigns.nvim',
-  'https://github.com/stevearc/conform.nvim.git'
+  -- Formatting
+  'https://github.com/stevearc/conform.nvim.git',
 })
 
 require('fzf-lua').setup { fzf_colors = true }
 require('mini.completion').setup {}
 require('mini.pairs').setup {}
+require('mini.surround').setup {}
 require('quicker').setup {}
 require('gitsigns').setup {}
 
-vim.lsp.enable({'clangd', 'pyright'})
+-- LSP
+vim.lsp.config('clangd', {})
+vim.lsp.enable('clangd')
 
+vim.lsp.config('pyright', {})
+vim.lsp.enable('pyright')
 
-require("conform").setup({
-formatters_by_ft = {
-python = { "isort", "black" },
-cpp = {"clang-format"},
-},
+vim.lsp.config('jdtls', {})
+vim.lsp.enable('jdtls')
+
+-- Formatting: `:Format` runs the formatters configured per filetype.
+require('conform').setup({
+  formatters_by_ft = {
+    python = { 'isort', 'black' },
+    cpp = { 'clang-format' },
+  },
 })
 
-vim.api.nvim_create_user_command("Format", function()
-require("conform").format()
+vim.api.nvim_create_user_command('Format', function()
+  require('conform').format()
 end, {})
