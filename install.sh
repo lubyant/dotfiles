@@ -3,10 +3,10 @@
 #
 #   git clone <repo-url> ~/dotfiles && ~/dotfiles/install.sh
 #
+# Anything already at a destination is overwritten, after a per-item y/N prompt.
 set -euo pipefail
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d%H%M%S)"
 
 link() {
     local src="$1" dest="$2"
@@ -20,10 +20,14 @@ link() {
         return
     fi
     if [ -e "$dest" ] || [ -L "$dest" ]; then
-        local rel="${dest#"$HOME"}"
-        mkdir -p "$BACKUP_DIR$(dirname "$rel")"
-        mv "$dest" "$BACKUP_DIR$rel"
-        echo "back  $dest  ->  $BACKUP_DIR$rel"
+        local reply=""
+        printf 'overwrite  %s ?  [y/N] ' "$dest"
+        read -r reply || true
+        case "$reply" in
+            [yY] | [yY][eE][sS]) ;;
+            *) echo "skip  $dest  (kept existing)"; return ;;
+        esac
+        rm -rf "$dest"
     fi
     mkdir -p "$(dirname "$dest")"
     ln -s "$src" "$dest"
@@ -35,12 +39,9 @@ echo "Dotfiles: $DOTFILES_DIR"
 echo
 
 link "$DOTFILES_DIR/nvim"           "$HOME/.config/nvim"
-link "$DOTFILES_DIR/tmux/tmux.conf" "$HOME/.tmux.conf"
+link "$DOTFILES_DIR/tmux/tmux.conf" "$HOME/.config/tmux/tmux.conf"
 
 echo
-if [ -d "$BACKUP_DIR" ]; then
-    echo "Existing files were moved to: $BACKUP_DIR"
-fi
 echo "Done."
 echo
 echo "Next steps:"

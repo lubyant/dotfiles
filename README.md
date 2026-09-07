@@ -11,7 +11,7 @@ dotfiles/
 │   ├── init.lua
 │   └── nvim-pack-lock.json # plugin lockfile (vim.pack)
 └── tmux/
-    └── tmux.conf           # -> ~/.tmux.conf
+    └── tmux.conf           # -> ~/.config/tmux/tmux.conf
 ```
 
 ## Install
@@ -22,9 +22,9 @@ git clone git@github.com:<you>/dotfiles.git ~/dotfiles
 ```
 
 `install.sh` symlinks `nvim/` to `~/.config/nvim` and `tmux/tmux.conf` to
-`~/.tmux.conf`. Anything already there is moved to
-`~/.dotfiles-backup/<timestamp>/` first. Running it again is a no-op once the
-links exist.
+`~/.config/tmux/tmux.conf` (tmux's XDG config path). Anything already at a
+destination is overwritten, but only after a per-item `y/N` prompt. Running it
+again is a no-op once the links exist.
 
 ## Requirements
 
@@ -46,7 +46,8 @@ on first launch. `nvim/nvim-pack-lock.json` pins revisions; update with
 ## tmux notes
 
 - Prefix is the default `C-b`.
-- `<prefix> |` / `<prefix> -` split vertically / horizontally, keeping the cwd.
+- `<prefix> %` / `<prefix> "` split left/right and top/bottom (tmux defaults).
+- `<prefix> c` opens a new window in the current pane's cwd.
 - `<prefix> h/j/k/l` move between panes; `H/J/K/L` resize.
 - Copy mode is vi-style: `v` select, `y` yank to the system clipboard
   (picks `pbcopy` / `wl-copy` / `xclip` automatically by OS).
